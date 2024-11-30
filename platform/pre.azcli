@@ -1,0 +1,62 @@
+RESOURCE_GROUP_NAME='alzdevops'
+STORAGE_ACCOUNT_NAME='alzdevopsstg'
+STORAGE_CONTAINER_NAME=alzdevblob
+LOCATION=westus
+#SPN_NAME=alzdevops-spn
+#KV_NAME=alzdevops-kv001
+
+# Create resource group
+az group create --name $RESOURCE_GROUP_NAME --location $LOCATION
+
+# Create storage account
+az storage account create --resource-group $RESOURCE_GROUP_NAME --name $STORAGE_ACCOUNT_NAME --sku Standard_LRS --encryption-services blob
+
+# Create blob container
+az storage container create --name $STORAGE_CONTAINER_NAME --account-name $STORAGE_ACCOUNT_NAME
+
+# Storage account access key
+SUBID=$(az account show --query id --output tsv)
+alzdevopsstg_key1=$(az storage account keys list --resource-group $RESOURCE_GROUP_NAME --account-name $STORAGE_ACCOUNT_NAME --query "[0].value" --output tsv)
+alzdevopsstg_key2=$(az storage account keys list --resource-group $RESOURCE_GROUP_NAME --account-name $STORAGE_ACCOUNT_NAME --query "[1].value" --output tsv)
+
+#Create service principal for authentication
+#az ad sp create-for-rbac -n $SPN_NAME --role Owner --scopes subscriptions/$SUBID
+
+#SPN_CLIENT_ID=$(az ad sp list --filter "displayName eq '$SPN_NAME'" --query '[0].appId' --output tsv)
+#SPN_SECRET=""
+#TENANTID=$(az account show --query tenantId --output tsv)
+#clientid_name=alzdevops-spn-client-id
+#clientsecret=alzdevops-spn-client-secret
+#tenantid=alzdevops-spn-tenant-id
+#key1name="alzdevopsstg-key1"
+#key2name="alzdevopsstg-key2"
+
+
+
+#### Create Key Vault
+#az keyvault create -l $LOCATION --name $KV_NAME --resource-group $RESOURCE_GROUP_NAME --enable-rbac-authorization false
+
+# Set Access Policy
+#az keyvault set-policy --name $KV_NAME --spn $SPN_CLIENT_ID --secret-permissions get list
+
+# Create KeyVault Secret keys
+#az keyvault secret set --vault-name $KV_NAME --name $clientid_name --value $SPN_CLIENT_ID
+#az keyvault secret set --vault-name $KV_NAME --name $clientsecret --value $SPN_SECRET
+#az keyvault secret set --vault-name $KV_NAME --name $tenantid --value $TENANTID
+#az keyvault secret set --vault-name $KV_NAME --name $key1name --value $alzdevopsstg_key1
+#az keyvault secret set --vault-name $KV_NAME --name $key2name --value $alzdevopsstg_key2
+
+
+
+
+##command 
+#tf init -backend-config="access_key=${alzdevopsstg_key1}"
+
+#tf plan  -var="spn-client-id=${SPN_CLIENT_ID}" -var="spn-client-secret=${SPN_SECRET}" -var="spn-tenant-id=${TENANTID}" -out tfplan 
+
+#tf apply tfplan -var="spn-client-id=${SPN_CLIENT_ID}" -var="spn-client-secret=${SPN_SECRET}" -var="spn-tenant-id=${TENANTID}"
+
+
+# Destroy Terraform state
+#tf destroy -auto-approve -var="spn-client-id=${SPN_CLIENT_ID}" -var="spn-client-secret=${SPN_SECRET}" -var="spn-tenant-id=${TENANTID}"
+#az login --service-principal -u ${SPN_CLIENT_ID} -p ${SPN_SECRET} --tenant ${TENANTID}
