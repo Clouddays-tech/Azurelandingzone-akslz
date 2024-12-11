@@ -1,0 +1,35 @@
+RESOURCE_GROUP_NAME=alzdevops
+STORAGE_ACCOUNT_NAME=alzdevopsstg
+STORAGE_CONTAINER_NAME=alzdevblob
+LOCATION=SouthEastAsia
+SPN_NAME=alzdevops-spn
+KV_NAME=alzdevops-kv001
+SUBID=$(az account show --query id --output tsv)
+alzdevopsstg_key1=$(az storage account keys list --resource-group $RESOURCE_GROUP_NAME --account-name $STORAGE_ACCOUNT_NAME --query "[0].value" --output tsv)
+alzdevopsstg_key2=$(az storage account keys list --resource-group $RESOURCE_GROUP_NAME --account-name $STORAGE_ACCOUNT_NAME --query "[1].value" --output tsv)
+
+##command 
+terraform init -backend-config="access_key=${alzdevopsstg_key1}"
+
+tf plan  -var="spn-client-id=${SPN_CLIENT_ID}" -var="spn-client-secret=${SPN_SECRET}" -var="spn-tenant-id=${TENANTID}" 
+
+tf apply tfplan
+
+tf apply  -var="spn-client-id=${SPN_CLIENT_ID}" -var="spn-client-secret=${SPN_SECRET}" -var="spn-tenant-id=${TENANTID}" -parallelism=15
+
+az login --service-principal -u ${SPN_CLIENT_ID} -p ${SPN_SECRET} --tenant ${TENANTID}
+
+
+#K8
+az aks get-credentials --name aks-aks-lqmc --resource-group $rg-lqmc
+
+kubectl create ns pets
+
+kubectl apply -f https://raw.githubusercontent.com/Azure-Samples/aks-store-demo/main/aks-store-all-in-one.yaml -n pets
+
+
+#kubectl create namespace ingress-basic
+#helm install ingress-nginx ingress-nginx/ingress-nginx -n ingress-basic
+
+#kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.3.0/deploy/static/provider/cloud/deploy.yaml
+#kubectl create ingress demo --class=nginx --rule storeapp.southeastasia.cloudapp.azure.com/=demo:80 --dry-run=client -o yaml > ingress.yaml
